@@ -1,4 +1,4 @@
-"""Streamlit interactive web interface for DocuMind."""
+﻿"""Streamlit interactive web interface for DocuMind."""
 
 import os
 
@@ -8,12 +8,12 @@ import streamlit as st
 API_BASE_URL = os.getenv("DOCUMIND_API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(
-    page_title="DocuMind — Grounded Document Q&A",
-    page_icon="📄",
+    page_title="DocuMind â€” Grounded Document Q&A",
+    page_icon="ðŸ“„",
     layout="wide",
 )
 
-st.title("📄 DocuMind")
+st.title("ðŸ“„ DocuMind")
 st.caption("Grounded document question-answering with verifiable inline citations.")
 
 
@@ -30,7 +30,7 @@ def api_get(path: str, params: dict | None = None) -> dict | None:
 
 def api_post_json(path: str, payload: dict) -> dict | None:
     try:
-        with httpx.Client(timeout=60.0) as client:
+        with httpx.Client(timeout=120.0) as client:
             resp = client.post(f"{API_BASE_URL}{path}", json=payload)
             resp.raise_for_status()
             return resp.json()
@@ -44,7 +44,7 @@ with st.sidebar:
     st.header("Settings & Status")
     health = api_get("/health")
     if health:
-        st.success(f"API Online • v{health['version']} ({health['environment']})")
+        st.success(f"API Online â€¢ v{health['version']} ({health['environment']})")
     else:
         st.warning(
             "FastAPI backend offline. Start it with:\n"
@@ -62,7 +62,7 @@ with st.sidebar:
     )
 
 tab_ask, tab_docs, tab_logs = st.tabs(
-    ["💬 Ask Documents", "📚 Knowledge Base", "📊 Audit Logs"]
+    ["ðŸ’¬ Ask Documents", "ðŸ“š Knowledge Base", "ðŸ“Š Audit Logs"]
 )
 
 # --- Tab 1: Ask Documents ---
@@ -100,7 +100,7 @@ with tab_ask:
                 st.subheader("Verified Sources")
                 for c in data["citations"]:
                     label = (
-                        f"[{c['source_number']}] {c['filename']} — "
+                        f"[{c['source_number']}] {c['filename']} â€” "
                         f"Page {c['page_number']}, Chunk #{c['chunk_index']} "
                         f"(score: {c['score']:.3f})"
                     )
@@ -158,7 +158,7 @@ with tab_docs:
                 )
                 col_name.write(f"**{doc.get('filename', 'Unknown')}**")
                 col_meta.write(
-                    f"Chunks: `{doc.get('chunk_count', '?')}` • ID: `{str(doc_id)[:12]}...`"
+                    f"Chunks: `{doc.get('chunk_count', '?')}` â€¢ ID: `{str(doc_id)[:12]}...`"
                 )
                 if col_del.button("Delete", key=f"del_{doc_id}"):
                     try:
