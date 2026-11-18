@@ -11,6 +11,7 @@ from pathlib import Path
 import pypdf
 from pypdf.errors import EmptyFileError, PdfReadError
 
+from documind.ingestion.errors import EmptyPDFError
 from documind.ingestion.models import DocumentPage
 
 
@@ -67,6 +68,12 @@ def load_pdf(file_path: Path | str) -> list[DocumentPage]:
                 page_number=page_idx,
                 file_hash=file_hash,
             )
+        )
+
+    if not any(page.text.strip() for page in pages):
+        raise EmptyPDFError(
+            f"PDF file '{path.name}' contains no extractable text. "
+            "The document may be scanned, image-only, or blank."
         )
 
     return pages

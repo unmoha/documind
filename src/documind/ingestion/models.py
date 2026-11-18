@@ -46,3 +46,26 @@ class DocumentChunk(BaseModel):
     file_hash: str = Field(
         description="SHA-256 hex digest of the raw source file.",
     )
+
+
+class IngestionResult(BaseModel):
+    """Result summary of an ingestion operation for a single source file."""
+
+    model_config = ConfigDict(frozen=True)
+
+    document_id: str = Field(
+        description="Unique identifier for the document (content hash).",
+    )
+    filename: str = Field(
+        description="Filename of the ingested document.",
+    )
+    file_hash: str = Field(
+        description="SHA-256 hexadecimal digest of the raw document content.",
+    )
+    chunks_indexed: int = Field(
+        ge=0,
+        description="Number of chunks stored in vector database.",
+    )
+    status: str = Field(
+        description="Outcome of the ingestion operation (indexed, already_indexed, skipped).",
+    )
