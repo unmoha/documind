@@ -86,6 +86,34 @@ class ChromaVectorStore:
             )
         return chunks
 
+    def get_chunks_by_filename(self, filename: str) -> list[dict[str, Any]]:
+        """Retrieve all indexed chunks and metadata for a given filename.
+
+        Args:
+            filename: Base filename of the document.
+
+        Returns:
+            List of chunk records with 'id', 'text', and 'metadata'.
+        """
+        results = self.collection.get(
+            where={"filename": filename},
+            include=["documents", "metadatas"],
+        )
+        chunks: list[dict[str, Any]] = []
+        ids = results.get("ids") or []
+        docs = results.get("documents") or []
+        metas = results.get("metadatas") or []
+
+        for i, chunk_id in enumerate(ids):
+            chunks.append(
+                {
+                    "id": chunk_id,
+                    "text": docs[i] if i < len(docs) else "",
+                    "metadata": metas[i] if i < len(metas) else {},
+                }
+            )
+        return chunks
+
     def add_chunks(
         self,
         chunks: list[DocumentChunk],
@@ -150,6 +178,48 @@ class ChromaVectorStore:
         if count > 0:
             self.collection.delete(where={"file_hash": file_hash})
         return count
+
+    def delete_by_filename(self, filename: str) -> int:
+        """Delete all chunks belonging to a filename from the collection.
+
+        Args:
+            filename: Base filename of the document to delete.
+
+        Returns:
+            Number of chunks that were removed.
+        """
+        existing = self.collection.get(where={"filename": filename})
+        existing_ids = existing.get("ids") or []
+        count = len(existing_ids)
+        if count > 0:
+            self.collection.delete(where={"filename": filename})
+        return count
+
+    def delete_stale_chunks(self, filename: str, current_file_hash: str) -> int:
+        """Delete all chunks for a filename whose file_hash does not match current_file_hash.
+
+        Args:
+            filename: Base filename of the document.
+            current_file_hash: Current SHA-256 hash of the ingested document.
+
+        Returns:
+            Number of stale chunks that were removed.
+        """
+        existing = self.collection.get(
+            where={"filename": filename},
+            include=["metadatas"],
+        )
+        existing_ids = existing.get("ids") or []
+        existing_metas = existing.get("metadatas") or []
+
+        stale_ids = [
+            chunk_id
+            for chunk_id, meta in zip(existing_ids, existing_metas, strict=False)
+            if meta and meta.get("file_hash") != current_file_hash
+        ]
+        if stale_ids:
+            self.collection.delete(ids=stale_ids)
+        return len(stale_ids)
 
     def count(self) -> int:
         """Return the total number of chunks stored across all documents.

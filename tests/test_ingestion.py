@@ -528,3 +528,89 @@ def test_ingest_multipage_pdf_pipeline(
     assert len(chunks) == 3
     page_nums = [c["metadata"]["page_number"] for c in chunks]
     assert page_nums == [1, 2, 3]
+
+
+def test_reingest_modified_file_purges_stale_chunks(
+    tmp_path: Path,
+    fake_embedder: FakeEmbedder,
+    test_vector_store: ChromaVectorStore,
+) -> None:
+    """Verify that re-ingesting a modified file replaces stale chunks without duplicates."""
+    doc_path = tmp_path / "notes.md"
+    doc_path.write_text(
+        "# Heading 1\n\nContent for section 1.\n\n"
+        "# Heading 2\n\nContent for section 2.\n\n"
+        "# Heading 3\n\nContent for section 3.",
+        encoding="utf-8",
+    )
+
+    custom_chunker = RecursiveCharacterChunker(chunk_size=50, chunk_overlap=10)
+
+    # Initial ingestion
+    res1 = ingest_file(
+        doc_path,
+        embedder=fake_embedder,
+        store=test_vector_store,
+        chunker=custom_chunker,
+    )
+    assert res1.status == "indexed"
+    assert res1.chunks_indexed == 3
+    assert res1.chunks_replaced == 0
+    assert test_vector_store.count() == 3
+
+    # Edit file content (shortened to a single chunk with a new content hash)
+    doc_path.write_text(
+        "# Updated Notes\n\nShort single chunk.",
+        encoding="utf-8",
+    )
+
+    # Re-ingest the modified file
+    res2 = ingest_file(
+        doc_path,
+        embedder=fake_embedder,
+        store=test_vector_store,
+        chunker=custom_chunker,
+    )
+    assert res2.status == "indexed"
+    assert res2.chunks_indexed == 1
+    assert res2.chunks_replaced == 3
+    assert res2.file_hash != res1.file_hash
+
+    # Assert only the new version's chunks remain in ChromaDB
+    assert test_vector_store.count() == 1
+    assert test_vector_store.has_document(res1.file_hash) is False
+    assert test_vector_store.has_document(res2.file_hash) is True
+
+    remaining_chunks = test_vector_store.get_chunks_by_filename("notes.md")
+    assert len(remaining_chunks) == 1
+    assert remaining_chunks[0]["metadata"]["file_hash"] == res2.file_hash
+    assert "Short single chunk" in remaining_chunks[0]["text"]
+
+
+def test_delete_by_filename_in_vector_store(
+    tmp_path: Path,
+    fake_embedder: FakeEmbedder,
+    test_vector_store: ChromaVectorStore,
+) -> None:
+    """Verify delete_by_filename removes only targeted document chunks."""
+    file_a = tmp_path / "file_a.txt"
+    file_a.write_text("Unique text for file A.", encoding="utf-8")
+    file_b = tmp_path / "file_b.txt"
+    file_b.write_text("Unique text for file B.", encoding="utf-8")
+
+    res_a = ingest_file(file_a, embedder=fake_embedder, store=test_vector_store)
+    res_b = ingest_file(file_b, embedder=fake_embedder, store=test_vector_store)
+    assert test_vector_store.count() == res_a.chunks_indexed + res_b.chunks_indexed
+
+    # Delete file A
+    removed = test_vector_store.delete_by_filename("file_a.txt")
+    assert removed == res_a.chunks_indexed
+    assert test_vector_store.count() == res_b.chunks_indexed
+    assert len(test_vector_store.get_chunks_by_filename("file_a.txt")) == 0
+    assert (
+        len(test_vector_store.get_chunks_by_filename("file_b.txt"))
+        == res_b.chunks_indexed
+    )
+
+    # Deleting non-existent file returns 0
+    assert test_vector_store.delete_by_filename("non_existent.txt") == 0

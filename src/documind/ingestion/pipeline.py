@@ -62,6 +62,7 @@ def ingest_file(
             filename=path.name,
             file_hash=file_hash,
             chunks_indexed=len(existing_chunks),
+            chunks_replaced=0,
             status="already_indexed",
         )
 
@@ -84,6 +85,7 @@ def ingest_file(
             filename=path.name,
             file_hash=file_hash,
             chunks_indexed=0,
+            chunks_replaced=0,
             status="skipped",
         )
 
@@ -95,7 +97,13 @@ def ingest_file(
     chunk_texts = [c.text for c in chunks]
     embeddings = embedder.embed_documents(chunk_texts)
 
-    # If force re-indexing, remove old chunks first
+    # If stale chunks exist for the same filename with a different hash, purge them
+    replaced_count = store.delete_stale_chunks(
+        filename=path.name,
+        current_file_hash=file_hash,
+    )
+
+    # If force re-indexing with identical hash, remove old chunks first
     if force and store.has_document(file_hash):
         store.delete_document(file_hash)
 
@@ -107,5 +115,6 @@ def ingest_file(
         filename=path.name,
         file_hash=file_hash,
         chunks_indexed=len(chunks),
+        chunks_replaced=replaced_count,
         status="indexed",
     )

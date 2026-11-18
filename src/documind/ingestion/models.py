@@ -66,6 +66,11 @@ class IngestionResult(BaseModel):
         ge=0,
         description="Number of chunks stored in vector database.",
     )
+    chunks_replaced: int = Field(
+        default=0,
+        ge=0,
+        description="Number of stale chunks replaced during re-ingestion of a modified file.",
+    )
     status: str = Field(
         description="Outcome of the ingestion operation (indexed, already_indexed, skipped).",
     )
