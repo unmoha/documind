@@ -1,0 +1,44 @@
+[
+  {
+    "id": "q1",
+    "question": "What are the success metrics and target SLAs?",
+    "expected_filename": "SPEC.md",
+    "expected_keywords": ["90%", "95%", "2.50"],
+    "answerable": true
+  },
+  {
+    "id": "q2",
+    "question": "Which embedding model is used for local dense vector generation?",
+    "expected_filename": "SPEC.md",
+    "expected_keywords": ["bge-small-en-v1.5"],
+    "answerable": true
+  },
+  {
+    "id": "q3",
+    "question": "Which databases are used for vector storage and structured query auditing?",
+    "expected_filename": "SPEC.md",
+    "expected_keywords": ["ChromaDB", "SQLite"],
+    "answerable": true
+  },
+  {
+    "id": "q4",
+    "question": "What file formats does DocuMind support for document upload?",
+    "expected_filename": "SPEC.md",
+    "expected_keywords": ["PDF", "TXT", "Markdown"],
+    "answerable": true
+  },
+  {
+    "id": "q5",
+    "question": "What is the best recipe for Ethiopian injera?",
+    "expected_filename": null,
+    "expected_keywords": [],
+    "answerable": false
+  },
+  {
+    "id": "q6",
+    "question": "What is the current stock price of NVIDIA?",
+    "expected_filename": null,
+    "expected_keywords": [],
+    "answerable": false
+  }
+]
