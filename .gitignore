@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Project data (generated locally)
+chroma_db/
+data/
+*.sqlite
+*.db
+evals/results/
+
+# Editors and OS
+.vscode/
+
+
+.idea/
+.DS_Store
