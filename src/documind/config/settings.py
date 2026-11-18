@@ -48,12 +48,12 @@ class Settings(BaseSettings):
 
     # Ingestion & Chunking
     chunk_size: int = Field(
-        default=500,
+        default=800,
         gt=0,
         description="Maximum character or token count per text chunk.",
     )
     chunk_overlap: int = Field(
-        default=50,
+        default=120,
         ge=0,
         description="Character or token overlap between consecutive chunks.",
     )

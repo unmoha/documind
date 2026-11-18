@@ -18,8 +18,8 @@ def test_default_settings():
     assert settings.sqlite_db_path == Path("./logs.sqlite")
     assert settings.embedding_model == "BAAI/bge-small-en-v1.5"
     assert settings.llm_provider == "gemini"
-    assert settings.chunk_size == 500
-    assert settings.chunk_overlap == 50
+    assert settings.chunk_size == 800
+    assert settings.chunk_overlap == 120
     assert settings.top_k == 4
     assert settings.temperature == 0.0
 
