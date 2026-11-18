@@ -87,7 +87,7 @@ class Settings(BaseSettings):
         description="Active LLM provider interface implementation.",
     )
     llm_model: str = Field(
-        default="gemini-2.5-flash",
+        default="gemini-3.8-flash",
         description="Specific model identifier for the active provider.",
     )
     temperature: float = Field(
