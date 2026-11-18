@@ -1,5 +1,6 @@
 """Grounded answer synthesis combining retrieval results and an LLM client."""
 
+import json
 import time
 
 from pydantic import BaseModel, Field
@@ -10,6 +11,7 @@ from documind.generation.prompts import (
     SYSTEM_INSTRUCTION,
     build_user_prompt,
 )
+from documind.logging import SQLiteLogger
 from documind.retrieval.retriever import RetrievalResult, RetrievedChunk, Retriever
 
 
@@ -85,13 +87,37 @@ class AnswerGenerator:
 
 
 class RAGPipeline:
-    """End-to-end retrieve-then-generate orchestrator."""
+    """End-to-end retrieve-then-generate orchestrator with optional SQLite auditing."""
 
-    def __init__(self, retriever: Retriever, generator: AnswerGenerator) -> None:
+    def __init__(
+        self,
+        retriever: Retriever,
+        generator: AnswerGenerator,
+        logger: SQLiteLogger | None = None,
+    ) -> None:
         self.retriever = retriever
         self.generator = generator
+        self.logger = logger
 
     def ask(self, question: str, top_k: int | None = None) -> GeneratedAnswer:
-        """Retrieve relevant chunks for a question and synthesize a cited answer."""
+        """Retrieve relevant chunks, synthesize a cited answer, and log the run."""
+        start = time.perf_counter()
         retrieval = self.retriever.retrieve(question, top_k=top_k)
-        return self.generator.generate(retrieval)
+        result = self.generator.generate(retrieval)
+        total_ms = round((time.perf_counter() - start) * 1000, 2)
+        result = result.model_copy(update={"latency_ms": total_ms})
+
+        if self.logger is not None:
+            citations_payload = json.dumps(
+                [c.model_dump() for c in result.citations], ensure_ascii=False
+            )
+            self.logger.log_interaction(
+                query=result.question,
+                best_score=result.best_score,
+                has_relevant_context=result.has_relevant_context,
+                answer=result.answer,
+                citations_json=citations_payload,
+                latency_ms=result.latency_ms,
+            )
+
+        return result
