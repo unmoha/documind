@@ -160,6 +160,8 @@ def create_app(services: AppServices | None = None) -> FastAPI:
             result = svc.pipeline.ask(payload.question, top_k=payload.top_k)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
         return QueryResponse(
             question=result.question,

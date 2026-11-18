@@ -8,12 +8,12 @@ import streamlit as st
 API_BASE_URL = os.getenv("DOCUMIND_API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(
-    page_title="DocuMind â€” Grounded Document Q&A",
-    page_icon="ðŸ“„",
+    page_title="DocuMind — Grounded Document Q&A",
+    page_icon="📄",
     layout="wide",
 )
 
-st.title("ðŸ“„ DocuMind")
+st.title("📄 DocuMind")
 st.caption("Grounded document question-answering with verifiable inline citations.")
 
 
@@ -44,7 +44,7 @@ with st.sidebar:
     st.header("Settings & Status")
     health = api_get("/health")
     if health:
-        st.success(f"API Online â€¢ v{health['version']} ({health['environment']})")
+        st.success(f"API Online • v{health['version']} ({health['environment']})")
     else:
         st.warning(
             "FastAPI backend offline. Start it with:\n"
@@ -62,7 +62,7 @@ with st.sidebar:
     )
 
 tab_ask, tab_docs, tab_logs = st.tabs(
-    ["ðŸ’¬ Ask Documents", "ðŸ“š Knowledge Base", "ðŸ“Š Audit Logs"]
+    ["💬 Ask Documents", "📚 Knowledge Base", "📊 Audit Logs"]
 )
 
 # --- Tab 1: Ask Documents ---
@@ -100,7 +100,7 @@ with tab_ask:
                 st.subheader("Verified Sources")
                 for c in data["citations"]:
                     label = (
-                        f"[{c['source_number']}] {c['filename']} â€” "
+                        f"[{c['source_number']}] {c['filename']} — "
                         f"Page {c['page_number']}, Chunk #{c['chunk_index']} "
                         f"(score: {c['score']:.3f})"
                     )
@@ -158,7 +158,7 @@ with tab_docs:
                 )
                 col_name.write(f"**{doc.get('filename', 'Unknown')}**")
                 col_meta.write(
-                    f"Chunks: `{doc.get('chunk_count', '?')}` â€¢ ID: `{str(doc_id)[:12]}...`"
+                    f"Chunks: `{doc.get('chunk_count', '?')}` • ID: `{str(doc_id)[:12]}...`"
                 )
                 if col_del.button("Delete", key=f"del_{doc_id}"):
                     try:
