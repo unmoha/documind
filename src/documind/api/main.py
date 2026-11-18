@@ -3,6 +3,7 @@
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 
@@ -63,6 +64,9 @@ def get_services(request: Request) -> AppServices:
     return services
 
 
+ServicesDep = Annotated[AppServices, Depends(get_services)]
+
+
 def create_app(services: AppServices | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
@@ -84,8 +88,8 @@ def create_app(services: AppServices | None = None) -> FastAPI:
 
     @app.post("/api/v1/documents/upload", response_model=UploadResponse)
     async def upload_document(
-        file: UploadFile = File(...),
-        svc: AppServices = Depends(get_services),
+        file: Annotated[UploadFile, File(...)],
+        svc: ServicesDep,
     ) -> UploadResponse:
         filename = Path(file.filename or "upload.txt").name
         suffix = Path(filename).suffix.lower()
@@ -119,9 +123,7 @@ def create_app(services: AppServices | None = None) -> FastAPI:
         )
 
     @app.get("/api/v1/documents", response_model=DocumentListResponse)
-    def list_documents(
-        svc: AppServices = Depends(get_services),
-    ) -> DocumentListResponse:
+    def list_documents(svc: ServicesDep) -> DocumentListResponse:
         docs = svc.store.list_documents()
         return DocumentListResponse(
             total_documents=len(docs),
@@ -134,7 +136,7 @@ def create_app(services: AppServices | None = None) -> FastAPI:
     )
     def delete_document(
         document_id: str,
-        svc: AppServices = Depends(get_services),
+        svc: ServicesDep,
     ) -> DeleteDocumentResponse:
         deleted = svc.store.delete_document(document_id)
         if deleted == 0:
@@ -152,7 +154,7 @@ def create_app(services: AppServices | None = None) -> FastAPI:
     @app.post("/api/v1/query", response_model=QueryResponse)
     def query_documents(
         payload: QueryRequest,
-        svc: AppServices = Depends(get_services),
+        svc: ServicesDep,
     ) -> QueryResponse:
         try:
             result = svc.pipeline.ask(payload.question, top_k=payload.top_k)
@@ -170,8 +172,8 @@ def create_app(services: AppServices | None = None) -> FastAPI:
 
     @app.get("/api/v1/logs", response_model=LogsResponse)
     def get_logs(
+        svc: ServicesDep,
         limit: int = 50,
-        svc: AppServices = Depends(get_services),
     ) -> LogsResponse:
         entries = svc.logger.get_recent_logs(limit=limit)
         return LogsResponse(count=len(entries), logs=entries)
