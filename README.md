@@ -87,13 +87,35 @@ uv run pytest
 uv run ruff check .
 ```
 
-### Starting the Services
+### Starting the Services (Local uv)
 ```bash
 # Start FastAPI backend
 uv run uvicorn documind.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Start Streamlit UI
 uv run streamlit run ui/app.py
+```
+
+### Running with Docker & Docker Compose
+The system includes a secure, non-root multi-stage Dockerfile and a full-stack Compose configuration.
+
+```bash
+# 1. Ensure DOCUMIND_GEMINI_API_KEY is set in your .env file
+# DOCUMIND_GEMINI_API_KEY="your-gemini-api-key"
+
+# 2. Build the multi-stage image and start both API and UI services
+docker compose up --build
+
+# 3. Access the services:
+# - FastAPI Swagger Docs: http://localhost:8000/docs
+# - FastAPI Health:       http://localhost:8000/health
+# - Streamlit Web UI:     http://localhost:8501
+
+# 4. Stop the services (data in ChromaDB and SQLite remains persisted in Docker volumes):
+docker compose down
+
+# To reset database volumes:
+# docker compose down -v
 ```
 
 ---

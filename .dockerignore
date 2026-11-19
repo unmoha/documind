@@ -1,0 +1,46 @@
+# ==============================================================================
+# DocuMind Docker Ignore File
+# Excludes local environments, secrets, persistent databases, and build artifacts
+# ==============================================================================
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Databases and persistent vector/audit storage (mounted via volumes)
+chroma_db/
+logs.sqlite
+logs.sqlite-*
+*.sqlite
+*.sqlite3
+*.db
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Git and GitHub metadata
+.git/
+.gitignore
+.github/
+
+# IDE, OS, and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
