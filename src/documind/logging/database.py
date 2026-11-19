@@ -1,5 +1,6 @@
 """SQLite interaction logging and query/response auditing."""
 
+import re
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,23 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from documind.config.settings import get_settings
+
+MAX_LOG_QUERY_LENGTH = 2000
+MAX_LOG_ANSWER_LENGTH = 10000
+
+
+def scrub_secrets(text: str) -> str:
+    """Scrub potential API keys and secrets from strings."""
+    if not text:
+        return text
+    cleaned = re.sub(r"\bAIza[0-9A-Za-z-_]{20,}\b", "[REDACTED_API_KEY]", text)
+    cleaned = re.sub(r"\bgsk_[0-9A-Za-z]{20,}\b", "[REDACTED_API_KEY]", cleaned)
+    cleaned = re.sub(
+        r"(?i)\b((?:key|secret|token|api_key|apikey)\s*[=:]\s*['\"]?)[0-9A-Za-z-_]{12,}(['\"]?)",
+        r"\1[REDACTED_API_KEY]\2",
+        cleaned,
+    )
+    return cleaned
 
 
 class InteractionLog(BaseModel):
@@ -62,7 +80,9 @@ class SQLiteLogger:
         citations_json: str,
         latency_ms: float,
     ) -> int:
-        """Insert a new interaction log entry and return its row ID."""
+        """Insert a new interaction log entry with truncation and secret scrubbing."""
+        safe_query = scrub_secrets(query[:MAX_LOG_QUERY_LENGTH])
+        safe_answer = scrub_secrets(answer[:MAX_LOG_ANSWER_LENGTH])
         with self._connect() as conn:
             cursor = conn.execute(
                 """
@@ -73,10 +93,10 @@ class SQLiteLogger:
                 """,
                 (
                     datetime.utcnow().isoformat(),
-                    query,
+                    safe_query,
                     best_score,
                     int(has_relevant_context),
-                    answer,
+                    safe_answer,
                     citations_json,
                     latency_ms,
                 ),
@@ -85,7 +105,8 @@ class SQLiteLogger:
             return cursor.lastrowid
 
     def get_recent_logs(self, limit: int = 10) -> list[InteractionLog]:
-        """Retrieve recent interaction logs for auditing."""
+        """Retrieve recent interaction logs for auditing, bounded between 1 and 200."""
+        safe_limit = max(1, min(int(limit), 200))
         with self._connect() as conn:
             cursor = conn.execute(
                 """
@@ -95,7 +116,7 @@ class SQLiteLogger:
                 ORDER BY id DESC
                 LIMIT ?
                 """,
-                (limit,),
+                (safe_limit,),
             )
             rows = cursor.fetchall()
             return [

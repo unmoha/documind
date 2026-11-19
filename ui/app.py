@@ -6,6 +6,16 @@ import httpx
 import streamlit as st
 
 API_BASE_URL = os.getenv("DOCUMIND_API_URL", "http://127.0.0.1:8000")
+API_TOKEN = os.getenv("DOCUMIND_API_TOKEN")
+
+
+def get_headers() -> dict[str, str]:
+    """Return default request headers including optional X-API-Token."""
+    headers: dict[str, str] = {}
+    if API_TOKEN:
+        headers["X-API-Token"] = API_TOKEN
+    return headers
+
 
 st.set_page_config(
     page_title="DocuMind — Grounded Document Q&A",
@@ -19,7 +29,7 @@ st.caption("Grounded document question-answering with verifiable inline citation
 
 def api_get(path: str, params: dict | None = None) -> dict | None:
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=30.0, headers=get_headers()) as client:
             resp = client.get(f"{API_BASE_URL}{path}", params=params)
             resp.raise_for_status()
             return resp.json()
@@ -30,7 +40,7 @@ def api_get(path: str, params: dict | None = None) -> dict | None:
 
 def api_post_json(path: str, payload: dict) -> dict | None:
     try:
-        with httpx.Client(timeout=120.0) as client:
+        with httpx.Client(timeout=120.0, headers=get_headers()) as client:
             resp = client.post(f"{API_BASE_URL}{path}", json=payload)
             resp.raise_for_status()
             return resp.json()
@@ -117,7 +127,7 @@ with tab_docs:
     if uploaded is not None and st.button("Ingest Document", type="primary"):
         with st.spinner(f"Indexing {uploaded.name}..."):
             try:
-                with httpx.Client(timeout=120.0) as client:
+                with httpx.Client(timeout=120.0, headers=get_headers()) as client:
                     resp = client.post(
                         f"{API_BASE_URL}/api/v1/documents/upload",
                         files={
@@ -162,7 +172,9 @@ with tab_docs:
                 )
                 if col_del.button("Delete", key=f"del_{doc_id}"):
                     try:
-                        with httpx.Client(timeout=30.0) as client:
+                        with httpx.Client(
+                            timeout=30.0, headers=get_headers()
+                        ) as client:
                             del_resp = client.delete(
                                 f"{API_BASE_URL}/api/v1/documents/{doc_id}"
                             )

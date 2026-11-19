@@ -70,9 +70,11 @@ class Retriever:
         query = query.strip()
         if not query:
             raise ValueError("Query must not be empty.")
+        if len(query) > 2000:
+            raise ValueError("Query length must not exceed 2000 characters.")
         k = top_k if top_k is not None else self.top_k
-        if k <= 0:
-            raise ValueError("top_k must be positive.")
+        if k <= 0 or k > 20:
+            raise ValueError("top_k must be between 1 and 20.")
 
         total = self.store.count()
         if total == 0:

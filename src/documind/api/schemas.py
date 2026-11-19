@@ -32,8 +32,8 @@ class DeleteDocumentResponse(BaseModel):
 
 
 class QueryRequest(BaseModel):
-    question: str = Field(min_length=1)
-    top_k: int | None = Field(default=None, gt=0)
+    question: str = Field(min_length=1, max_length=2000)
+    top_k: int | None = Field(default=None, gt=0, le=20)
 
 
 class QueryResponse(BaseModel):

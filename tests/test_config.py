@@ -44,13 +44,22 @@ def test_env_override(monkeypatch):
 
 def test_secret_str_masking():
     """Verify that SecretStr does not leak plain text in string representation."""
-    settings = Settings(gemini_api_key="my-super-secret-key")
+    settings = Settings(
+        gemini_api_key="my-super-secret-key",
+        api_token="my-api-token-123",
+    )
 
     assert settings.gemini_api_key is not None
     assert "my-super-secret-key" not in str(settings)
     assert "my-super-secret-key" not in repr(settings)
     assert "my-super-secret-key" not in str(settings.gemini_api_key)
     assert settings.gemini_api_key.get_secret_value() == "my-super-secret-key"
+
+    assert settings.api_token is not None
+    assert "my-api-token-123" not in str(settings)
+    assert "my-api-token-123" not in repr(settings)
+    assert "my-api-token-123" not in str(settings.api_token)
+    assert settings.api_token.get_secret_value() == "my-api-token-123"
 
 
 def test_validation_errors():

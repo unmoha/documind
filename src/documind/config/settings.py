@@ -57,6 +57,11 @@ class Settings(BaseSettings):
         ge=0,
         description="Character or token overlap between consecutive chunks.",
     )
+    max_upload_size_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        gt=0,
+        description="Maximum allowed file upload size in bytes (default: 10 MB).",
+    )
 
     # Embeddings
     embedding_model: str = Field(
@@ -108,6 +113,10 @@ class Settings(BaseSettings):
     )
 
     # Secrets (use SecretStr to prevent accidental leakage in logs or dumps)
+    api_token: SecretStr | None = Field(
+        default=None,
+        description="Optional API protection token for /api/v1 endpoints.",
+    )
     gemini_api_key: SecretStr | None = Field(
         default=None,
         description="API key for Google Gemini.",
