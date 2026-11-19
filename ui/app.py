@@ -1,4 +1,4 @@
-﻿"""Streamlit interactive web interface for DocuMind."""
+"""Streamlit interactive web interface for DocuMind."""
 
 import os
 
